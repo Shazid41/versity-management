@@ -2,9 +2,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Grade, Course } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Safe initialization of the API client
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.warn("API_KEY is missing. AI features will not work.");
+  }
+  return new GoogleGenAI({ apiKey: apiKey || 'dummy-key' });
+};
 
 export const getAcademicAdvice = async (grades: Grade[], courses: Course[]) => {
+  const ai = getAIClient();
   const prompt = `
     As an AI University Counselor, analyze this student's performance and provide advice.
     Grades: ${JSON.stringify(grades)}
@@ -38,11 +46,16 @@ export const getAcademicAdvice = async (grades: Grade[], courses: Course[]) => {
     return JSON.parse(response.text);
   } catch (error) {
     console.error("Gemini AI Error:", error);
-    return null;
+    return {
+        summary: "Unable to analyze academic data at this moment.",
+        strengths: ["Data connection needed"],
+        recommendations: ["Please check your API configuration"]
+    };
   }
 };
 
 export const getTeacherInsights = async (studentGrades: any[], courseName: string) => {
+  const ai = getAIClient();
   const prompt = `
     As an AI Teaching Assistant, analyze the class performance for the course "${courseName}".
     Data: ${JSON.stringify(studentGrades)}
